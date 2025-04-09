@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ -e /etc/init.d/adguardhome ]; then
+	/etc/init.d/adguardhome stop
+	/etc/init.d/adguardhome disable
+	chmod -x /etc/init.d/adguardhome
+fi
+exit 0

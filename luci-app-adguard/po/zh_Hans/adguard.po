@@ -1,0 +1,68 @@
+msgid "AdGuardHome"
+msgstr "AdGuardHome"
+
+msgid "Simple LuCI web controller for AdGuardHome"
+msgstr "AdGuardHome 的简易 LuCI 网页控制界面"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Not Running"
+msgstr "未运行"
+
+msgid "Collecting data..."
+msgstr "正在收集数据..."
+
+msgid "Basic Settings"
+msgstr "基本设置"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Enable AdGuardHome service"
+msgstr "启用 AdGuardHome 服务"
+
+msgid "DNS Port"
+msgstr "DNS 端口"
+
+msgid "AdGuardHome DNS server port"
+msgstr "AdGuardHome DNS 服务器端口"
+
+msgid "Web Interface Port"
+msgstr "网页管理端口"
+
+msgid "Web management interface port"
+msgstr "网页管理界面端口"
+
+msgid "Redirect Mode"
+msgstr "重定向模式"
+
+msgid "DNS traffic redirection method"
+msgstr "DNS 流量重定向方式"
+
+msgid "Run as dnsmasq upstream server"
+msgstr "作为 dnsmasq 上游服务器运行"
+
+msgid "Replace dnsmasq completely"
+msgstr "完全替代 dnsmasq"
+
+msgid "No redirection"
+msgstr "不进行重定向"
+
+msgid "Configuration Path"
+msgstr "配置文件路径"
+
+msgid "Path to AdGuardHome configuration file"
+msgstr "AdGuardHome 配置文件路径"
+
+msgid "Working Directory"
+msgstr "工作目录"
+
+msgid "AdGuardHome working directory (contains rules, logs and database)"
+msgstr "AdGuardHome 工作目录（包含规则、日志和数据库）"
+
+msgid "Log File"
+msgstr "日志文件"
+
+msgid "AdGuardHome runtime log file (set to \"syslog\" for system log, leave empty for no logging)"
+msgstr "AdGuardHome 运行日志文件（设为 \"syslog\" 使用系统日志，留空则不记录日志）"

@@ -1,0 +1,19 @@
+{
+    "luci-app-adguard": {
+        "description": "Grant UCI access for luci-app-adguardhome",
+        "read": {
+            "uci": [
+                "adguard"
+            ],      
+			"ubus": {
+				"service": ["list"],
+				"luci.adguard": ["*"]
+			}
+        },
+        "write": {
+            "uci": [
+                "adguard"
+            ]
+        }
+    }
+}

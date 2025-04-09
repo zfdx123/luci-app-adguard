@@ -1,0 +1,13 @@
+{
+	"admin/services/adguard": {
+		"title": "AdGuardHome",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "adguard"
+		},
+		"depends": {
+			"acl": [ "luci-app-adguard" ]
+		}
+	}
+}

@@ -1,0 +1,217 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+START=95
+STOP=01
+
+CONF="adguard"
+PROG="/usr/bin/AdGuardHome"
+
+# 设置DNS转发到AdGuardHome
+set_forward_dnsmasq() {
+    local port="$1"
+    local addr="127.0.0.1#${port}"
+    local old_server=$(uci get dhcp.@dnsmasq[0].server 2>/dev/null)
+
+    if echo "$old_server" | grep -q "^${addr}"; then
+        return 0
+    fi
+
+    uci delete dhcp.@dnsmasq[0].server 2>/dev/null
+    uci add_list dhcp.@dnsmasq[0].server="$addr"
+    uci commit dhcp
+
+    if ! /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+        echo "Failed to restart dnsmasq for forwarding"
+    fi
+}
+
+# 停止DNS转发到AdGuardHome
+stop_forward_dnsmasq() {
+    local port="$1"
+    local addr="127.0.0.1#${port}"
+    local old_server=$(uci get dhcp.@dnsmasq[0].server 2>/dev/null)
+
+    if ! echo "$old_server" | grep -q "^${addr}"; then
+        return 0
+    fi
+
+    uci del_list dhcp.@dnsmasq[0].server="$addr" 2>/dev/null
+    uci commit dhcp
+
+    if ! /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+        echo "Failed to restart dnsmasq for stopping forwarding"
+    fi
+}
+
+# 替换dnsmasq的DNS端口
+set_replace_dnsmasq() {
+    local config_path="$1"
+    local adguard_port=$(config_editor "dns.port" "" "$config_path" "1")
+    local dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
+    dnsmasq_port=${dnsmasq_port:-53}
+
+    if [ "$dnsmasq_port" = "$adguard_port" ]; then
+        if [ "$dnsmasq_port" = "53" ]; then
+            adguard_port="1745"
+        fi
+    elif [ "$adguard_port" = "53" ]; then
+        return 0
+    fi
+
+    config_editor "dns.port" "53" "$config_path"
+    uci set dhcp.@dnsmasq[0].port="$adguard_port"
+    uci commit dhcp
+
+    if ! /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
+        echo "Failed to reload dnsmasq for replacing DNS"
+    fi
+}
+
+# 恢复替换的dnsmasq的DNS端口
+undo_replace_dnsmasq() {
+    local config_path="$1"
+    local adguard_port=$(config_editor "dns.port" "" "$config_path" "1")
+    local dnsmasq_port=$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)
+    dnsmasq_port=${dnsmasq_port:-53}
+
+    if [ "$dnsmasq_port" = "53" ]; then
+        return 0
+    fi
+
+    config_editor "dns.port" "$dnsmasq_port" "$config_path"
+    uci set dhcp.@dnsmasq[0].port="53"
+    uci commit dhcp
+
+    if ! /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
+        echo "Failed to reload dnsmasq for undoing DNS replacement"
+    fi
+}
+
+# 配置文件编辑器
+config_editor() {
+    awk -v yaml="$1" -v value="$2" -v file="$3" -v ro="$4" '
+    BEGIN{split(yaml,part,"\\.");s="";i=1;l=length(part);}
+    {
+        if (match($0,s""part[i]":"))
+        {
+            if (i==l)
+            {
+                split($0,t,": ");
+                if (ro==""){
+                system("sed -i '\''"FNR"c \\"t[1]": "value"'\'' "file);
+                }else{
+                print(t[2]);
+                }
+                exit;
+            }
+            s=s"[- ]{2}";
+            i++;
+        }
+    }' "$3"
+}
+
+# 停止服务
+stop_service() {
+    config_load "$CONF"
+
+    local enabled config_path port old_port redirect
+    config_get enabled "default" "enabled" "0"
+    config_get config_path "default" "config_path" "/etc/adguardhome.yaml"
+    config_get port "default" "port" "11553"
+    config_get old_port "default" "old_port" "11553"
+    config_get redirect "default" "redirect" "dnsmasq-upstream"
+
+    # 恢复DNS设置
+    case "$redirect" in
+    "dnsmasq-upstream")
+        stop_forward_dnsmasq "$old_port"
+        ;;
+    "replace-dnsmasq")
+        undo_replace_dnsmasq "$config_path"
+        ;;
+    esac
+
+    # 清除记录的旧端口
+    uci delete adguard.default.old_port 2>/dev/null
+    uci commit adguard
+}
+
+# 启动服务
+start_service() {
+    config_load "$CONF"
+
+    local enabled config_path port work_dir http_port log_file redirect
+    config_get enabled "default" "enabled" "0"
+    config_get http_port "default" "http_port" "3000"
+    config_get port "default" "port" "11553"
+    config_get redirect "default" "redirect" "dnsmasq-upstream"
+    config_get config_path "default" "config_path" "/etc/adguardhome.yaml"
+    config_get work_dir "default" "work_dir" "/var/lib/adguardhome"
+    config_get log_file "default" "log_file" "/tmp/adguardhome.log"
+
+    # 停止时确保清理之前的配置
+    stop_service
+
+    if [ "$enabled" = "0" ]; then
+        return 0
+    fi
+
+    # 更新AdGuardHome端口配置
+    config_editor "dns.port" "$port" "$config_path"
+
+    # 根据模式设置DNS转发
+    case "$redirect" in
+    "dnsmasq-upstream")
+        set_forward_dnsmasq "$port"
+        ;;
+    "replace-dnsmasq")
+        if [ "$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)" = "53" ]; then
+            set_replace_dnsmasq "$config_path"
+        fi
+        ;;
+    esac
+
+    # 创建工作目录
+    [ ! -d "$work_dir" ] && mkdir -p "$work_dir"
+
+    # 记录当前端口
+    local current_port=$(config_editor "dns.port" "" "$config_path" "1")
+    uci set adguard.default.old_port="$current_port"
+    uci commit adguard
+
+    # 启动服务
+    procd_open_instance "adguardhome-c"
+    procd_set_param command "$PROG"
+    procd_set_param file "$config_path"
+    procd_append_param command -w "$work_dir"
+    procd_append_param command -c "$config_path"
+    procd_append_param command -p "$http_port"
+    procd_append_param command -l "$log_file"
+    procd_set_param respawn
+    procd_close_instance
+}
+
+start() {
+    start_service
+}
+
+stop() {
+    stop_service
+    procd_kill "adguardhome-c" >/dev/null 2>&1
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    stop_service
+    start_service
+}
+
+service_triggers() {
+    procd_add_reload_trigger "$CONF" "/etc/init.d/$CONF" restart
+    procd_add_interface_trigger "interface.*.up" wan "/etc/init.d/$CONF" reload
+}
