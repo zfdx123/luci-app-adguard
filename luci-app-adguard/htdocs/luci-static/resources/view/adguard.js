@@ -95,7 +95,7 @@ return view.extend({
         o.rmempty = false;
 
         o = s.taboption('settings',form.Value, 'config_path', _('Configuration Path'), _('Path to AdGuardHome configuration file'));
-        o.placeholder = '/etc/adguardhome.yaml';
+        o.placeholder = '/etc/AdGuardHome.yaml';
         o.rmempty = false;
 
         o = s.taboption('settings',form.Value, 'work_dir', _('Working Directory'), _('AdGuardHome working directory (contains rules, logs and database)'));
