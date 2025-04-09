@@ -173,7 +173,7 @@ start_service() {
     esac
 
     # 创建工作目录
-    [ ! -d "$work_dir" ] && mkdir -p "$work_dir"
+    [ ! -d "$work_dir" ] && mkdir -m 0755 -p "$work_dir"
 
     # 记录当前端口
     local current_port=$(config_editor "dns.port" "" "$config_path" "1")
