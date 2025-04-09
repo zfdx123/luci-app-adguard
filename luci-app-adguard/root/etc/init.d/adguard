@@ -126,7 +126,7 @@ stop_service() {
     # 恢复DNS设置
     case "$old_mode" in
     "dnsmasq-upstream")
-        stop_forward_dnsmasq "$port"
+        stop_forward_dnsmasq "$old_port"
         ;;
     "replace-dnsmasq")
         undo_replace_dnsmasq "$config_path"
