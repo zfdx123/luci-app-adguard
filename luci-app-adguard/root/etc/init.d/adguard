@@ -115,25 +115,27 @@ config_editor() {
 stop_service() {
     config_load "$CONF"
 
-    local enabled config_path port old_port redirect
+    local enabled config_path port old_port redirect old_mode
     config_get enabled "default" "enabled" "0"
     config_get config_path "default" "config_path" "/etc/adguardhome.yaml"
     config_get port "default" "port" "11553"
     config_get old_port "default" "old_port" "11553"
-    config_get redirect "default" "redirect" "dnsmasq-upstream"
+    # 获取旧的转发模式
+    old_mode=$(uci get adguard.default.old_redirect 2>/dev/null)
 
     # 恢复DNS设置
-    case "$redirect" in
+    case "$old_mode" in
     "dnsmasq-upstream")
-        stop_forward_dnsmasq "$old_port"
+        stop_forward_dnsmasq "$port"
         ;;
     "replace-dnsmasq")
         undo_replace_dnsmasq "$config_path"
         ;;
     esac
 
-    # 清除记录的旧端口
+    # 清除记录的旧端口和旧模式
     uci delete adguard.default.old_port 2>/dev/null
+    uci delete adguard.default.old_redirect 2>/dev/null
     uci commit adguard
 }
 
@@ -175,9 +177,10 @@ start_service() {
     # 创建工作目录
     [ ! -d "$work_dir" ] && mkdir -m 0755 -p "$work_dir"
 
-    # 记录当前端口
+    # 记录当前端口和当前模式
     local current_port=$(config_editor "dns.port" "" "$config_path" "1")
     uci set adguard.default.old_port="$current_port"
+    uci set adguard.default.old_redirect="$redirect"
     uci commit adguard
 
     # 启动服务
