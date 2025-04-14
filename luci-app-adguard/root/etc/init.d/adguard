@@ -117,7 +117,7 @@ stop_service() {
 
     local enabled config_path port old_port redirect old_mode
     config_get enabled "default" "enabled" "0"
-    config_get config_path "default" "config_path" "/etc/adguardhome.yaml"
+    config_get config_path "default" "config_path" "/etc/AdGuardHome.yaml"
     config_get port "default" "port" "11553"
     config_get old_port "default" "old_port" "11553"
     # 获取旧的转发模式
@@ -148,7 +148,7 @@ start_service() {
     config_get http_port "default" "http_port" "3000"
     config_get port "default" "port" "11553"
     config_get redirect "default" "redirect" "dnsmasq-upstream"
-    config_get config_path "default" "config_path" "/etc/adguardhome.yaml"
+    config_get config_path "default" "config_path" "/etc/AdGuardHome.yaml"
     config_get work_dir "default" "work_dir" "/var/lib/adguardhome"
     config_get log_file "default" "log_file" "/tmp/adguardhome.log"
 
