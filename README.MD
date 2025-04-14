@@ -7,3 +7,5 @@
 密码: admin
 
 修改密码：密码加密为 Bcrypt (Rounds: 10) 生成密码在 `AdGuardHome.yaml` 修改即可
+
+![alt text](image.png)
