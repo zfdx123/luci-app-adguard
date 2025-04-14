@@ -170,6 +170,11 @@ start_service() {
     "replace-dnsmasq")
         if [ "$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)" = "53" ]; then
             set_replace_dnsmasq "$config_path"
+        else
+            echo "Unpicked DNS port Write default"
+            uci set dhcp.@dnsmasq[0].port="53"
+            uci commit dhcp
+            set_replace_dnsmasq "$config_path"
         fi
         ;;
     esac
