@@ -155,6 +155,8 @@ start_service() {
     # 停止时确保清理之前的配置
     stop_service
 
+    uci get dhcp.@dnsmasq[0].port >/dev/null 2>&1 || uci set dhcp.@dnsmasq[0].port="53" >/dev/null 2>&1
+
     if [ "$enabled" = "0" ]; then
         return 0
     fi
@@ -168,12 +170,7 @@ start_service() {
         set_forward_dnsmasq "$port"
         ;;
     "replace-dnsmasq")
-        if [ "$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)" = "53" ]; then
-            set_replace_dnsmasq "$config_path"
-        else
-            echo "Unpicked DNS port Write default"
-            uci set dhcp.@dnsmasq[0].port="53"
-            uci commit dhcp
+        if [ "$(uci get dhcp.@dnsmasq[0].port 2>/dev/null)" == "53" ]; then
             set_replace_dnsmasq "$config_path"
         fi
         ;;
