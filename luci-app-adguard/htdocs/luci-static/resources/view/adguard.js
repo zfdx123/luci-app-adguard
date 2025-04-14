@@ -91,7 +91,7 @@ return view.extend({
         o.value('dnsmasq-upstream', _('Run as dnsmasq upstream server'));
         o.value('replace-dnsmasq', _('Replace dnsmasq completely'));
         o.value('none', _('No redirection'));
-        o.default = 'replace-dnsmasq';
+        o.default = 'none';
         o.rmempty = false;
 
         o = s.taboption('settings',form.Value, 'config_path', _('Configuration Path'), _('Path to AdGuardHome configuration file'));
